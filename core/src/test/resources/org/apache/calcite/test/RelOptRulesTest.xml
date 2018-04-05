@@ -8265,4 +8265,30 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testTransitiveFilterOnJoinRule">
+        <Resource name="sql">
+          <![CDATA[select n1.SAL from EMPNULLABLES_20 n1 where "
+                + "EXISTS (select n2.SAL from EMPNULLABLES_20 n2 where n1.SAL=n2.SAL and n1.SAL=3)"
+                + " AND EXISTS (select n3.SAL from EMPNULLABLES_20 n3 where n1.SAL=n3.SAL and n3.SAL=5)]]>
+        </Resource>
+        <Resource name="planBefore">
+          <![CDATA[
+LogicalProject(DEPTNO=[$7])
+  LogicalFilter(condition=[OR(=($7, 1), =($16, 4))])
+    LogicalJoin(condition=[=($7, $16)], joinType=[inner])
+      LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+      LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+        </Resource>
+      <Resource name="planAfter">
+        <![CDATA[
+LogicalProject(DEPTNO=[$7])
+  LogicalJoin(condition=[AND(=($7, $16))], joinType=[inner])
+      LogicalFilter(condition=[OR(=($7, 1), =($7, 4))])
+    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+      LogicalFilter(condition=[OR(=($16, 1), =($16, 4))])
+    LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+      </Resource>
+    </TestCase>
 </Root>

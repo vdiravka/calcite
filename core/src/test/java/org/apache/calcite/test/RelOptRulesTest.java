@@ -3805,6 +3805,29 @@ public class RelOptRulesTest extends RelOptTestBase {
     sql(sql).with(program).withContext(context).check();
   }
 
+  /** Test case for
+   * <a href="https://issues.apache.org/jira/browse/CALCITE-2241">[CALCITE-2241]
+   * Join equality condition should be considered while pushing down filter conditions
+   * with expressions disjunction for both tables </a>. */
+  @Test public void testTransitiveFilterOnJoinRule() {
+    HepProgram hepProgram = new HepProgramBuilder()
+        .addRuleInstance(FilterJoinRule.FILTER_ON_JOIN)
+        .addRuleInstance(FilterJoinRule.JOIN) // doesn't change the plan
+        .addRuleInstance(JoinPushTransitivePredicatesRule.INSTANCE) // doesn't change the plan
+        .build();
+
+    final HepPlanner hepPlanner = new HepPlanner(hepProgram);
+
+    final String sql = "select t1.deptno from sales.emp t1\n"
+        + "join sales.emp t2 on t1.deptno = t2.deptno\n"
+        + "where t1.deptno = 1 OR t2.deptno = 4";
+
+    sql(sql)
+        .withDecorrelation(true)
+        .with(hepPlanner)
+        .check();
+  }
+
 }
 
 // End RelOptRulesTest.java
