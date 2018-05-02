@@ -8322,4 +8322,25 @@ LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$
 ]]>
         </Resource>
     </TestCase>
+    <TestCase name="testDeriveFiltersFromDisjunctions">
+      <Resource name="planBefore">
+        <![CDATA[
+LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8], DEPTNO0=[$9], NAME=[$10])
+  LogicalFilter(condition=[OR(AND(=($7, 5), =($9, 2)), AND(=($7, 7), =($9, 3)))])
+    LogicalJoin(condition=[=($2, $10)], joinType=[inner])
+      LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+      LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
+]]>
+      </Resource>
+      <Resource name="planAfter">
+        <![CDATA[
+LogicalProject(EMPNO=[$0], ENAME=[$1], JOB=[$2], MGR=[$3], HIREDATE=[$4], SAL=[$5], COMM=[$6], DEPTNO=[$7], SLACKER=[$8], DEPTNO0=[$9], NAME=[$10])
+  LogicalJoin(condition=[AND(=($2, $10), OR(=($7, 5), =($9, 3)), OR(=($9, 2), =($7, 7)))], joinType=[inner])
+    LogicalFilter(condition=[OR(=($7, 5), =($7, 7))])
+      LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+    LogicalFilter(condition=[OR(=($0, 2), =($0, 3))])
+      LogicalTableScan(table=[[CATALOG, SALES, DEPT]])
+]]>
+      </Resource>
+    </TestCase>
 </Root>

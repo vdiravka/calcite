@@ -134,9 +134,12 @@ public abstract class FilterJoinRule extends RelOptRule {
       return;
     }
 
+    final RexBuilder rexBuilder = join.getCluster().getRexBuilder();
+
     final List<RexNode> aboveFilters =
         filter != null
-            ? RelOptUtil.conjunctions(filter.getCondition())
+            ? RelOptUtil.conjunctions(
+                RexUtil.toCnf(rexBuilder, filter.getCondition()))
             : Lists.<RexNode>newArrayList();
     final ImmutableList<RexNode> origAboveFilters =
         ImmutableList.copyOf(aboveFilters);
@@ -151,12 +154,6 @@ public abstract class FilterJoinRule extends RelOptRule {
 
     final List<RexNode> leftFilters = new ArrayList<>();
     final List<RexNode> rightFilters = new ArrayList<>();
-
-    // TODO - add logic to derive additional filters.  E.g., from
-    // (t1.a = 1 AND t2.a = 2) OR (t1.b = 3 AND t2.b = 4), you can
-    // derive table filters:
-    // (t1.a = 1 OR t1.b = 3)
-    // (t2.a = 2 OR t2.b = 4)
 
     // Try to push down above filters. These are typically where clause
     // filters. They can be pushed down if they are not on the NULL
@@ -216,7 +213,7 @@ public abstract class FilterJoinRule extends RelOptRule {
 
     // create Filters on top of the children if any filters were
     // pushed to them
-    final RexBuilder rexBuilder = join.getCluster().getRexBuilder();
+//    final RexBuilder rexBuilder = join.getCluster().getRexBuilder();
     final RelBuilder relBuilder = call.builder();
     final RelNode leftRel =
         relBuilder.push(join.getLeft()).filter(leftFilters).build();
